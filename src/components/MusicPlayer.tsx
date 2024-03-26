@@ -101,7 +101,7 @@ const MusicPlayer = (props: MusicPlayerProps) => {
     searchTracks();
   };
 
-  const handleTrackClick = async (track: any) => {
+  const handleTrackClick = async (track: SpotifyApi.TrackObjectFull) => {
     setSelectedTrack(track);
     await getTrackAnalysis(track.id);
     const gradient = await getBackgroundGradient(track.album.images[0].url);
@@ -109,34 +109,55 @@ const MusicPlayer = (props: MusicPlayerProps) => {
   };
 
   return (
-    <div>
-      <form onSubmit={handleSearch}>
-        <input
-          type="text"
-          value={search()}
-          onInput={(event) => setSearch(event.currentTarget.value)}
-          placeholder="Search tracks..."
-        />
-        <button type="submit">Search</button>
-      </form>
-      <ul>
-        {tracks().map((track) => (
-          <li onClick={() => handleTrackClick(track)}>
-            {track.name} - {track.artists[0].name}
-          </li>
-        ))}
-      </ul>
-      {selectedTrack() && (
-        <div>
-          <h2>{selectedTrack()!.name}</h2>
-          <p>{selectedTrack()!.artists[0].name}</p>
-          <img
-            src={selectedTrack()!.album.images[0].url}
-            alt={selectedTrack()!.name}
+    <div class="flex h-screen">
+      <div class="w-1/3 p-4 overflow-y-auto">
+        <form onSubmit={handleSearch} class="mb-4">
+          <input
+            type="text"
+            value={search()}
+            onInput={(event) => setSearch(event.currentTarget.value)}
+            placeholder="Search tracks..."
+            class="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-        </div>
-      )}
-      <canvas ref={canvasRef} />
+          <button
+            type="submit"
+            class="mt-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            Search
+          </button>
+        </form>
+        <ul class="space-y-2">
+          {tracks().map((track) => (
+            <li
+              onClick={() => handleTrackClick(track)}
+              class="cursor-pointer px-4 py-2 rounded-md hover:bg-gray-100"
+            >
+              {track.name} - {track.artists[0].name}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div class="w-2/3 relative">
+        <canvas ref={canvasRef} class="w-full h-full" />
+        {selectedTrack() && (
+          <div class="absolute bottom-4 left-4 text-white">
+            <h2 class="text-2xl font-bold">
+              {(selectedTrack() as SpotifyApi.TrackObjectFull).name}
+            </h2>
+            <p class="text-lg">
+              {(selectedTrack() as SpotifyApi.TrackObjectFull).artists[0].name}
+            </p>
+            <img
+              src={
+                (selectedTrack() as SpotifyApi.TrackObjectFull).album.images[0]
+                  .url
+              }
+              alt={(selectedTrack() as SpotifyApi.TrackObjectFull).name}
+              class="w-24 h-24 mt-2 object-cover rounded-md"
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 };
