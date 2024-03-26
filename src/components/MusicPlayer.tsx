@@ -141,18 +141,11 @@ const MusicPlayer = (props: MusicPlayerProps) => {
         <canvas ref={canvasRef} class="w-full h-full" />
         {selectedTrack() && (
           <div class="absolute bottom-4 left-4 text-white">
-            <h2 class="text-2xl font-bold">
-              {(selectedTrack() as SpotifyApi.TrackObjectFull).name}
-            </h2>
-            <p class="text-lg">
-              {(selectedTrack() as SpotifyApi.TrackObjectFull).artists[0].name}
-            </p>
+            <h2 class="text-2xl font-bold">{selectedTrack()!.name}</h2>
+            <p class="text-lg">{selectedTrack()!.artists[0].name}</p>
             <img
-              src={
-                (selectedTrack() as SpotifyApi.TrackObjectFull).album.images[0]
-                  .url
-              }
-              alt={(selectedTrack() as SpotifyApi.TrackObjectFull).name}
+              src={selectedTrack()!.album.images[0].url}
+              alt={selectedTrack()!.name}
               class="w-24 h-24 mt-2 object-cover rounded-md"
             />
           </div>
