@@ -1,47 +1,22 @@
-# Astro Starter Kit: Minimal
+# Interactive Music Player
 
-```sh
-npm create astro@latest -- --template minimal
-```
+This repository contains the code for an interactive music player that integrates the Spotify API and Three.js for a unique user experience.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/minimal)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/minimal)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/minimal/devcontainer.json)
+## Features
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+- Plays music tracks through Spotify using an access token
+- Allows searching for tracks in Spotify and displays the results
+- Acquires and displays audio feature information for the selected track
+- Generates a background gradient based on the image of the selected track
+- Sets up a Three.js scene for visual effects based on the track's audio characteristics
+- Applies a "frosted glass" effect on the Three.js rendering surface
 
-## 🚀 Project Structure
+## Installation and usage
 
-Inside of your Astro project, you'll see the following folders and files:
+These are the general steps to get this project up and running, if specific steps are needed, please update this section with those steps.
 
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
-
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
-
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
-
-Any static assets, like images, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+1. Clone this repository.
+2. Install all dependencies using `npm install`.
+3. Make sure you have a valid Spotify API access token. If not, update the code to acquire a proper access token.
+4. Start the development server using `npm run dev`.
+5. Navigate to `localhost:4321` (or whatever port you have configured) to see the application in action.

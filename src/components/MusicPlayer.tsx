@@ -1,11 +1,12 @@
 import { createSignal, onMount } from "solid-js";
-import * as THREE from "three";
 import SpotifyWebApi from "spotify-web-api-js";
 import ColorThief from "colorthief";
+import "./MusicPlayer.css";
 
 type MusicPlayerProps = {
   accessToken: string;
 };
+
 interface BackgroundGradient {
   style: string;
   keyframes: string;
@@ -18,8 +19,8 @@ const MusicPlayer = (props: MusicPlayerProps) => {
     createSignal<SpotifyApi.TrackObjectFull | null>(null);
   const [audioFeatures, setAudioFeatures] =
     createSignal<SpotifyApi.AudioFeaturesResponse | null>(null);
+  const [audioRef, setAudioRef] = createSignal<HTMLAudioElement | null>(null);
   const [isSearchVisible, setSearchVisible] = createSignal(true);
-  let canvasRef: HTMLCanvasElement | undefined;
 
   const spotifyApi = new SpotifyWebApi();
 
@@ -46,10 +47,10 @@ const MusicPlayer = (props: MusicPlayerProps) => {
         const palette = colorThief.getPalette(img, 4);
         const gradient = `linear-gradient(45deg, rgb(${palette[0].join(",")}), rgb(${palette[1].join(",")}), rgb(${palette[2].join(",")}), rgb(${palette[3].join(",")}))`;
         const keyframes = `@keyframes gradientAnimation {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-      }`;
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }`;
         const style = `background: ${gradient}; background-size: 400% 400%; animation: gradientAnimation 15s ease infinite;`;
         resolve({ style, keyframes });
       });
@@ -58,54 +59,6 @@ const MusicPlayer = (props: MusicPlayerProps) => {
 
   onMount(() => {
     spotifyApi.setAccessToken(props.accessToken);
-
-    // Configure the Three.js scene
-    const scene = new THREE.Scene();
-
-    // Configure the camera
-    const camera = new THREE.PerspectiveCamera(
-      75,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000,
-    );
-    camera.position.z = 5;
-
-    // Configures the renderer
-    const renderer = new THREE.WebGLRenderer({
-      canvas: canvasRef,
-      alpha: true,
-    });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-
-    // Creates the plane geometry
-    const planeGeometry = new THREE.PlaneGeometry(10, 10);
-
-    // Creates the frosted glass material
-    const glassMaterial = new THREE.MeshPhongMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.8,
-      shininess: 30,
-    });
-
-    // Create the drawing and apply the material
-    const plane = new THREE.Mesh(planeGeometry, glassMaterial);
-    scene.add(plane);
-
-    // Adds lighting to the scene
-    const light = new THREE.PointLight(0xffffff, 1, 100);
-    light.position.set(0, 0, 10);
-    scene.add(light);
-
-    // Render the scene
-    const animate = () => {
-      if (canvasRef) {
-        requestAnimationFrame(animate);
-        renderer.render(scene, camera);
-      }
-    };
-    animate();
   });
 
   const handleSearch = (event: Event) => {
@@ -123,6 +76,36 @@ const MusicPlayer = (props: MusicPlayerProps) => {
     const styleElement = document.createElement("style");
     styleElement.innerHTML = keyframes;
     document.head.appendChild(styleElement);
+
+    const audio = audioRef();
+    if (audio) {
+      audio.src = track.preview_url;
+      await audio.play();
+    }
+  };
+
+  const togglePlay = () => {
+    const audio = audioRef();
+    if (audio?.paused) {
+      audio?.play();
+    } else {
+      audio?.pause();
+    }
+  };
+
+  const handleSeek = (event: Event) => {
+    const seekTime = (event.target as HTMLInputElement).value;
+    const audio = audioRef();
+    if (audio) {
+      audio.currentTime = parseFloat(seekTime);
+    }
+  };
+
+  const toggleRepeat = () => {
+    const audio = audioRef();
+    if (audio) {
+      audio.loop = !audio.loop;
+    }
   };
 
   return (
@@ -157,6 +140,58 @@ const MusicPlayer = (props: MusicPlayerProps) => {
         </ul>
       </div>
       <div class="w-4/5 relative">
+        <div class="absolute inset-0 bg-white bg-opacity-20 backdrop-filter backdrop-blur-[137px]">
+          <div class="grain-overlay"></div>
+        </div>
+        {selectedTrack() && (
+          <div class="absolute bottom-4 left-4 right-4 flex items-center justify-between text-white">
+            <button onClick={togglePlay}>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                class="w-6 h-6"
+              >
+                {audioRef()?.paused ? (
+                  <path
+                    fill-rule="evenodd"
+                    d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm-2.625 6c-.54 0-.828.419-.936.634a1.96 1.96 0 00-.189.866c0 .298.059.605.189.866.108.215.395.634.936.634.54 0 .828-.419.936-.634.13-.26.189-.568.189-.866 0-.298-.059-.605-.189-.866-.108-.215-.395-.634-.936-.634zm4.314.634c.108-.215.395-.634.936-.634.54 0 .828.419.936.634.13.26.189.568.189.866 0 .298-.059.605-.189.866-.108.215-.395.634-.936.634-.54 0-.828-.419-.936-.634a1.96 1.96 0 01-.189-.866c0-.298.059-.605.189-.866zm-4.34 7.964a.75.75 0 01-1.061-1.06 5.236 5.236 0 013.73-1.538 5.236 5.236 0 013.695 1.538.75.75 0 11-1.061 1.06 3.736 3.736 0 00-2.639-1.098 3.736 3.736 0 00-2.664 1.098z"
+                    clip-rule="evenodd"
+                  />
+                ) : (
+                  <path
+                    fill-rule="evenodd"
+                    d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm14.024-.983a1.125 1.125 0 010 1.966l-5.603 3.113A1.125 1.125 0 019 15.113V8.887c0-.857.921-1.4 1.671-.983l5.603 3.113z"
+                    clip-rule="evenodd"
+                  />
+                )}
+              </svg>
+            </button>
+            <input
+              type="range"
+              min="0"
+              max={audioRef()?.duration || 0}
+              step="0.01"
+              value={audioRef()?.currentTime || 0}
+              onInput={handleSeek}
+              class="w-full mx-4"
+            />
+            <button onClick={toggleRepeat}>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                class="w-6 h-6"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M5.25 7.5A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v9a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25v-9zm1.5 0v9a.75.75 0 00.75.75h9a.75.75 0 00.75-.75v-9a.75.75 0 00-.75-.75h-9a.75.75 0 00-.75.75z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </button>
+          </div>
+        )}
         <button
           class="absolute top-4 left-4 p-2 bg-white rounded-md shadow-md text-gray-600 hover:text-gray-800 focus:outline-none"
           onClick={() => setSearchVisible(!isSearchVisible())}
@@ -176,19 +211,21 @@ const MusicPlayer = (props: MusicPlayerProps) => {
             />
           </svg>
         </button>
-        <canvas ref={canvasRef} class="w-full h-full" />
-        {selectedTrack() && (
-          <div class="absolute bottom-4 left-4 text-white">
-            <h2 class="text-2xl font-bold">{selectedTrack()!.name}</h2>
-            <p class="text-lg">{selectedTrack()!.artists[0].name}</p>
+        <div class="absolute bottom-0 inset-x-0 p-8 flex items-center">
+          <div class="w-1/2">
+            <h2 class="text-4xl font-bold mb-2">{selectedTrack()?.name}</h2>
+            <p class="text-2xl">{selectedTrack()?.artists[0].name}</p>
+          </div>
+          <div class="w-1/2 flex justify-end">
             <img
-              src={selectedTrack()!.album.images[0].url}
-              alt={selectedTrack()!.name}
-              class="w-24 h-24 mt-2 object-cover rounded-md"
+              src={selectedTrack()?.album.images[0].url}
+              alt={selectedTrack()?.name}
+              class="w-48 h-48 object-cover rounded-lg shadow-lg"
             />
           </div>
-        )}
+        </div>
       </div>
+      <audio ref={setAudioRef} style={{ display: "none" }} />
     </div>
   );
 };
