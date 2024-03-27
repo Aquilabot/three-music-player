@@ -6,6 +6,10 @@ import ColorThief from "colorthief";
 type MusicPlayerProps = {
   accessToken: string;
 };
+interface BackgroundGradient {
+  style: string;
+  keyframes: string;
+}
 
 const MusicPlayer = (props: MusicPlayerProps) => {
   const [search, setSearch] = createSignal("");
@@ -14,6 +18,7 @@ const MusicPlayer = (props: MusicPlayerProps) => {
     createSignal<SpotifyApi.TrackObjectFull | null>(null);
   const [audioFeatures, setAudioFeatures] =
     createSignal<SpotifyApi.AudioFeaturesResponse | null>(null);
+  const [isSearchVisible, setSearchVisible] = createSignal(true);
   let canvasRef: HTMLCanvasElement | undefined;
 
   const spotifyApi = new SpotifyWebApi();
@@ -28,7 +33,9 @@ const MusicPlayer = (props: MusicPlayerProps) => {
     setAudioFeatures(data);
   };
 
-  const getBackgroundGradient = async (imageUrl: string) => {
+  const getBackgroundGradient = async (
+    imageUrl: string,
+  ): Promise<BackgroundGradient> => {
     const colorThief = new ColorThief();
     const img = new Image();
     img.crossOrigin = "Anonymous";
@@ -36,9 +43,15 @@ const MusicPlayer = (props: MusicPlayerProps) => {
 
     return new Promise((resolve) => {
       img.addEventListener("load", () => {
-        const palette = colorThief.getPalette(img, 2);
-        const gradient = `linear-gradient(45deg, rgb(${palette[0].join(",")}), rgb(${palette[1].join(",")}))`;
-        resolve(gradient);
+        const palette = colorThief.getPalette(img, 4);
+        const gradient = `linear-gradient(45deg, rgb(${palette[0].join(",")}), rgb(${palette[1].join(",")}), rgb(${palette[2].join(",")}), rgb(${palette[3].join(",")}))`;
+        const keyframes = `@keyframes gradientAnimation {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }`;
+        const style = `background: ${gradient}; background-size: 400% 400%; animation: gradientAnimation 15s ease infinite;`;
+        resolve({ style, keyframes });
       });
     });
   };
@@ -46,10 +59,10 @@ const MusicPlayer = (props: MusicPlayerProps) => {
   onMount(() => {
     spotifyApi.setAccessToken(props.accessToken);
 
-    // Configura la escena de Three.js
+    // Configure the Three.js scene
     const scene = new THREE.Scene();
 
-    // Configura la cámara
+    // Configure the camera
     const camera = new THREE.PerspectiveCamera(
       75,
       window.innerWidth / window.innerHeight,
@@ -58,35 +71,34 @@ const MusicPlayer = (props: MusicPlayerProps) => {
     );
     camera.position.z = 5;
 
-    // Configura el renderizador
+    // Configures the renderer
     const renderer = new THREE.WebGLRenderer({
       canvas: canvasRef,
       alpha: true,
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
 
-    // Crea la geometría del plano
+    // Creates the plane geometry
     const planeGeometry = new THREE.PlaneGeometry(10, 10);
 
-    // Crea el material de vidrio esmerilado
-    const glassMaterial = new THREE.MeshStandardMaterial({
+    // Creates the frosted glass material
+    const glassMaterial = new THREE.MeshPhongMaterial({
       color: 0xffffff,
       transparent: true,
       opacity: 0.8,
-      roughness: 0.5,
-      metalness: 0.1,
+      shininess: 30,
     });
 
-    // Crea el plano y aplica el material
+    // Create the drawing and apply the material
     const plane = new THREE.Mesh(planeGeometry, glassMaterial);
     scene.add(plane);
 
-    // Agrega iluminación a la escena
+    // Adds lighting to the scene
     const light = new THREE.PointLight(0xffffff, 1, 100);
     light.position.set(0, 0, 10);
     scene.add(light);
 
-    // Renderiza la escena
+    // Render the scene
     const animate = () => {
       if (canvasRef) {
         requestAnimationFrame(animate);
@@ -104,13 +116,20 @@ const MusicPlayer = (props: MusicPlayerProps) => {
   const handleTrackClick = async (track: SpotifyApi.TrackObjectFull) => {
     setSelectedTrack(track);
     await getTrackAnalysis(track.id);
-    const gradient = await getBackgroundGradient(track.album.images[0].url);
-    document.body.style.background = gradient as string;
+    const { style, keyframes } = (await getBackgroundGradient(
+      track.album.images[0].url,
+    )) as BackgroundGradient;
+    document.body.style.cssText = style;
+    const styleElement = document.createElement("style");
+    styleElement.innerHTML = keyframes;
+    document.head.appendChild(styleElement);
   };
 
   return (
     <div class="flex h-screen">
-      <div class="w-1/3 p-4 overflow-y-auto">
+      <div
+        class={`w-1/5 p-4 overflow-y-auto ${isSearchVisible() ? "" : "hidden"}`}
+      >
         <form onSubmit={handleSearch} class="mb-4">
           <input
             type="text"
@@ -137,7 +156,26 @@ const MusicPlayer = (props: MusicPlayerProps) => {
           ))}
         </ul>
       </div>
-      <div class="w-2/3 relative">
+      <div class="w-4/5 relative">
+        <button
+          class="absolute top-4 left-4 p-2 bg-white rounded-md shadow-md text-gray-600 hover:text-gray-800 focus:outline-none"
+          onClick={() => setSearchVisible(!isSearchVisible())}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          </svg>
+        </button>
         <canvas ref={canvasRef} class="w-full h-full" />
         {selectedTrack() && (
           <div class="absolute bottom-4 left-4 text-white">
